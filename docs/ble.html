@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Camper module BLE test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html {
+        font-family: Arial, sans-serif;
+        color: #202020;
+      }
+      body {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      button {
+        background: #736b92;
+        border: 0;
+        color: #fff;
+        font-size: 1.1rem;
+        padding: 14px 18px;
+      }
+      pre {
+        background: #f4f4f4;
+        border: 1px solid #ddd;
+        overflow: auto;
+        padding: 14px;
+        white-space: pre-wrap;
+      }
+      .hint {
+        color: #555;
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Camper module BLE test</h1>
+    <p class="hint">
+      Open this page in Bluefy, put the controller into setup mode, then tap the
+      button and select Camper module.
+    </p>
+    <button onclick="connectBle()">Connect BLE</button>
+    <h3>Status</h3>
+    <pre id="status">Not connected</pre>
+    <h3>Configuration JSON</h3>
+    <pre id="configuration"></pre>
+
+    <script>
+      const serviceUuid = "abd39c82-951e-4acb-944d-ba04db3e1e03";
+      const configurationUuid = "abd39c82-951e-4acb-944d-ba04db3e1e05";
+
+      function writeStatus(message) {
+        document.getElementById("status").textContent = message;
+      }
+
+      function decodeValue(value) {
+        return new TextDecoder("utf-8").decode(value);
+      }
+
+      async function connectBle() {
+        try {
+          if (!navigator.bluetooth) {
+            writeStatus("Web Bluetooth is not available in this browser.");
+            return;
+          }
+
+          writeStatus("Requesting BLE device ...");
+          const device = await navigator.bluetooth.requestDevice({
+            filters: [{ services: [serviceUuid] }],
+            optionalServices: [serviceUuid],
+          });
+
+          writeStatus(`Connecting to ${device.name || "BLE device"} ...`);
+          const server = await device.gatt.connect();
+          const service = await server.getPrimaryService(serviceUuid);
+          const configurationCharacteristic =
+            await service.getCharacteristic(configurationUuid);
+
+          writeStatus("Reading configuration ...");
+          const value = await configurationCharacteristic.readValue();
+          const text = decodeValue(value);
+
+          try {
+            document.getElementById("configuration").textContent =
+              JSON.stringify(JSON.parse(text), null, 2);
+          } catch (_error) {
+            document.getElementById("configuration").textContent = text;
+          }
+
+          writeStatus("Connected and configuration read.");
+        } catch (error) {
+          writeStatus(error && error.message ? error.message : String(error));
+        }
+      }
+    </script>
+  </body>
+</html>
