@@ -7,108 +7,52 @@
       :root {
         --accent: #736b92;
         --accent-dark: #5f587c;
+        --button-off: #e3e3e3;
         --paper: #f6f5f2;
         --line: #dedbd2;
         --ink: #202020;
         --muted: #666;
       }
-      * {
-        box-sizing: border-box;
-      }
-      html {
-        font-family: Arial, sans-serif;
-        color: var(--ink);
-      }
-      body {
-        max-width: 680px;
-        margin: 0 auto;
-        padding: 22px;
-        background: #fff;
-      }
-      h1 {
-        font-size: 2.2rem;
-        margin: 0 0 6px;
-      }
-      h2 {
-        font-size: 1.25rem;
-        margin: 24px 0 14px;
-      }
-      .hint,
-      .muted {
-        color: var(--muted);
-        line-height: 1.4;
-      }
-      .card {
-        background: var(--paper);
-        border: 1px solid var(--line);
-        margin-top: 18px;
-        padding: 16px;
-      }
-      .row {
-        align-items: center;
-        display: flex;
-        gap: 12px;
-        margin: 12px 0;
-      }
-      .row label:first-child {
-        flex: 1;
-        font-size: 1.05rem;
-      }
-      button {
-        background: var(--accent);
-        border: 0;
-        color: #fff;
-        cursor: pointer;
-        font-size: 1.05rem;
-        margin: 6px 6px 6px 0;
-        padding: 14px 18px;
-      }
-      button:disabled {
-        background: #d8d8d8;
-        color: #555;
-      }
-      button:active {
-        background: var(--accent-dark);
-        transform: scale(0.98);
-      }
-      input[type="checkbox"],
-      input[type="radio"] {
-        accent-color: var(--accent);
-        height: 30px;
-        width: 30px;
-      }
-      input[type="number"],
-      select {
-        font-size: 1rem;
-        min-height: 38px;
-        min-width: 96px;
-        padding: 6px;
-      }
-      pre {
-        background: #fff;
-        border: 1px solid var(--line);
-        overflow: auto;
-        padding: 12px;
-        white-space: pre-wrap;
-      }
-      [hidden] {
-        display: none !important;
-      }
+      * { box-sizing: border-box; }
+      html { font-family: Arial, sans-serif; color: var(--ink); }
+      body { max-width: 680px; margin: 0 auto; padding: 22px; background: #fff; }
+      h1 { font-size: 2.2rem; margin: 0 0 6px; }
+      h2 { font-size: 1.25rem; margin: 0 0 16px; }
+      .hint, .muted { color: var(--muted); line-height: 1.4; }
+      .top-actions { margin: 18px 0; }
+      .tabs { display: flex; gap: 6px; margin-top: 18px; }
+      .tab-button { flex: 1; margin: 0; padding: 12px 8px; }
+      .tab-button.inactive { background: var(--button-off); color: #333; }
+      .card { background: var(--paper); border: 1px solid var(--line); padding: 16px; }
+      .row { align-items: center; display: flex; gap: 12px; margin: 12px 0; }
+      .row label:first-child { flex: 1; font-size: 1.05rem; }
+      button { background: var(--accent); border: 0; color: #fff; cursor: pointer; font-size: 1.05rem; margin: 6px 6px 6px 0; padding: 14px 18px; }
+      button:disabled { background: #d8d8d8; color: #555; }
+      button:active { background: var(--accent-dark); transform: scale(0.98); }
+      input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); height: 30px; width: 30px; }
+      input[type="number"], select { font-size: 1rem; min-height: 38px; min-width: 96px; padding: 6px; }
+      pre { background: #fff; border: 1px solid var(--line); overflow: auto; padding: 12px; white-space: pre-wrap; }
+      [hidden] { display: none !important; }
     </style>
   </head>
   <body>
     <h1>Camper module</h1>
-    <p class="hint">
-      Put the controller into setup mode, open this page in Bluefy, then connect
-      over BLE.
-    </p>
+    <p class="hint">Open this page in Bluefy while the controller is in setup mode.</p>
 
-    <button id="connectButton" onclick="connectBle()">Connect BLE</button>
-    <button id="refreshButton" onclick="refreshConfiguration()" disabled>Refresh</button>
+    <div class="top-actions">
+      <button id="connectButton" onclick="connectBle()">Connect BLE</button>
+      <button id="refreshButton" onclick="refreshConfiguration()" disabled>Refresh</button>
+    </div>
     <pre id="status">Not connected</pre>
 
     <section id="app" hidden>
-      <div class="card">
+      <div class="tabs">
+        <button id="sensorsTabButton" class="tab-button" onclick="showTab('sensorsTab')">Sensors</button>
+        <button id="pumpTabButton" class="tab-button inactive" onclick="showTab('pumpTab')">Water pump</button>
+        <button id="exitTabButton" class="tab-button inactive" onclick="showTab('exitTab')">Exit setup</button>
+      </div>
+
+      <div id="sensorsTab" class="card">
         <h2>Sensors</h2>
         <div class="row">
           <label for="FLOWMETER">Flow meter</label>
@@ -134,12 +78,9 @@
         <button onclick="saveSensors()">Save sensors</button>
       </div>
 
-      <div class="card">
+      <div id="pumpTab" class="card" hidden>
         <h2>Water pump</h2>
-        <div class="row">
-          <label>Status</label>
-          <strong id="pumpStatus">-</strong>
-        </div>
+        <div class="row"><label>Status</label><strong id="pumpStatus">-</strong></div>
         <div class="row">
           <label for="invertPWSignal">Invert signal</label>
           <input type="checkbox" id="invertPWSignal" />
@@ -158,11 +99,9 @@
         <button onclick="sendCommandAndRefresh({ command: 'stopPump' })">Stop pump</button>
       </div>
 
-      <div class="card">
+      <div id="exitTab" class="card" hidden>
         <h2>Exit setup</h2>
-        <p class="muted">
-          Stops setup mode and returns the controller to normal low-power operation.
-        </p>
+        <p class="muted">Stops setup mode and returns the controller to normal low-power operation.</p>
         <button onclick="exitSetup()">Exit setup</button>
       </div>
 
@@ -184,45 +123,27 @@
       let statusCharacteristic = null;
       let currentConfiguration = null;
 
-      function writeStatus(message) {
-        document.getElementById("status").textContent = message;
-      }
-
-      function decodeValue(value) {
-        return new TextDecoder("utf-8").decode(value);
-      }
-
-      function encodeValue(value) {
-        return new TextEncoder().encode(value);
-      }
+      function writeStatus(message) { document.getElementById("status").textContent = message; }
+      function decodeValue(value) { return new TextDecoder("utf-8").decode(value); }
+      function encodeValue(value) { return new TextEncoder().encode(value); }
 
       async function connectBle() {
         try {
-          if (!navigator.bluetooth) {
-            writeStatus("Web Bluetooth is not available in this browser.");
-            return;
-          }
-
+          if (!navigator.bluetooth) { writeStatus("Web Bluetooth is not available in this browser."); return; }
           writeStatus("Requesting BLE device ...");
-          bleDevice = await navigator.bluetooth.requestDevice({
-            filters: [{ services: [serviceUuid] }],
-            optionalServices: [serviceUuid],
-          });
-
+          bleDevice = await navigator.bluetooth.requestDevice({ filters: [{ services: [serviceUuid] }], optionalServices: [serviceUuid] });
           writeStatus(`Connecting to ${bleDevice.name || "BLE device"} ...`);
           const server = await bleDevice.gatt.connect();
           const service = await server.getPrimaryService(serviceUuid);
           configurationCharacteristic = await service.getCharacteristic(configurationUuid);
           commandCharacteristic = await service.getCharacteristic(commandUuid);
           statusCharacteristic = await service.getCharacteristic(statusUuid);
-
           document.getElementById("connectButton").disabled = true;
           document.getElementById("refreshButton").disabled = false;
           document.getElementById("app").hidden = false;
+          showTab("sensorsTab");
           await refreshConfiguration();
-        } catch (error) {
-          writeStatus(error && error.message ? error.message : String(error));
-        }
+        } catch (error) { writeStatus(error && error.message ? error.message : String(error)); }
       }
 
       async function refreshConfiguration() {
@@ -234,30 +155,28 @@
         const value = await configurationCharacteristic.readValue();
         const text = decodeValue(value);
         document.getElementById("configuration").textContent = text;
-        currentConfiguration = JSON.parse(text);
+        try {
+          currentConfiguration = JSON.parse(text);
+        } catch (error) {
+          writeStatus("Configuration JSON is incomplete. Flash the updated firmware with compact BLE configuration.");
+          return;
+        }
         applyConfiguration(currentConfiguration);
         writeStatus("Connected and configuration loaded.");
       }
 
       async function sendCommand(command, refreshAfter = true) {
-        const payload = JSON.stringify(command);
         writeStatus(`Sending ${command.command} ...`);
-        await commandCharacteristic.writeValue(encodeValue(payload));
+        await commandCharacteristic.writeValue(encodeValue(JSON.stringify(command)));
         await wait(350);
         try {
           const statusValue = await statusCharacteristic.readValue();
           writeStatus(decodeValue(statusValue));
-        } catch (_error) {
-          writeStatus(`${command.command} sent.`);
-        }
-        if (refreshAfter) {
-          await readConfiguration();
-        }
+        } catch (_error) { writeStatus(`${command.command} sent.`); }
+        if (refreshAfter) { await readConfiguration(); }
       }
 
-      async function sendCommandAndRefresh(command) {
-        await sendCommand(command, true);
-      }
+      async function sendCommandAndRefresh(command) { await sendCommand(command, true); }
 
       function applyConfiguration(config) {
         document.querySelector("h1").textContent = config.deviceName || "Camper module";
@@ -267,7 +186,6 @@
         document.getElementById("BME280").checked = config.BME280 === true;
         document.getElementById("Environment").checked = config.SHT2X === true || config.BME280 === true;
         setEnvironmentEnabled(document.getElementById("Environment").checked);
-
         const pump = config.pump || {};
         const usesFlowMeter = pump.usesFlowMeter === true || config.FLOWMETER === true;
         document.getElementById("pumpStatus").textContent = pump.state || "-";
@@ -281,6 +199,12 @@
           : "Flow meter is off. The pump stops after the auto-stop timer.";
       }
 
+      function showTab(tabId) {
+        ["sensorsTab", "pumpTab", "exitTab"].forEach((id) => { document.getElementById(id).hidden = id !== tabId; });
+        ["sensorsTabButton", "pumpTabButton", "exitTabButton"].forEach((id) => { document.getElementById(id).classList.add("inactive"); });
+        document.getElementById(`${tabId}Button`).classList.remove("inactive");
+      }
+
       function changeEnvironment(checkbox) {
         setEnvironmentEnabled(checkbox.checked);
         if (checkbox.checked && !document.getElementById("SHT2X").checked && !document.getElementById("BME280").checked) {
@@ -291,10 +215,7 @@
       function setEnvironmentEnabled(enabled) {
         document.getElementById("SHT2X").disabled = !enabled;
         document.getElementById("BME280").disabled = !enabled;
-        if (!enabled) {
-          document.getElementById("SHT2X").checked = false;
-          document.getElementById("BME280").checked = false;
-        }
+        if (!enabled) { document.getElementById("SHT2X").checked = false; document.getElementById("BME280").checked = false; }
       }
 
       async function saveSensors() {
@@ -321,9 +242,7 @@
         writeStatus("Exit setup command sent. The controller should restart.");
       }
 
-      function wait(ms) {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-      }
+      function wait(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
     </script>
   </body>
 </html>
