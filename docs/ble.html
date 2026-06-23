@@ -1,53 +1,188 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Camper module BLE test</title>
+    <title>Camper module BLE</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
+      :root {
+        --accent: #736b92;
+        --accent-dark: #5f587c;
+        --paper: #f6f5f2;
+        --line: #dedbd2;
+        --ink: #202020;
+        --muted: #666;
+      }
+      * {
+        box-sizing: border-box;
+      }
       html {
         font-family: Arial, sans-serif;
-        color: #202020;
+        color: var(--ink);
       }
       body {
-        max-width: 640px;
+        max-width: 680px;
         margin: 0 auto;
-        padding: 24px;
+        padding: 22px;
+        background: #fff;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin: 0 0 6px;
+      }
+      h2 {
+        font-size: 1.25rem;
+        margin: 24px 0 14px;
+      }
+      .hint,
+      .muted {
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      .card {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        margin-top: 18px;
+        padding: 16px;
+      }
+      .row {
+        align-items: center;
+        display: flex;
+        gap: 12px;
+        margin: 12px 0;
+      }
+      .row label:first-child {
+        flex: 1;
+        font-size: 1.05rem;
       }
       button {
-        background: #736b92;
+        background: var(--accent);
         border: 0;
         color: #fff;
-        font-size: 1.1rem;
+        cursor: pointer;
+        font-size: 1.05rem;
+        margin: 6px 6px 6px 0;
         padding: 14px 18px;
       }
+      button:disabled {
+        background: #d8d8d8;
+        color: #555;
+      }
+      button:active {
+        background: var(--accent-dark);
+        transform: scale(0.98);
+      }
+      input[type="checkbox"],
+      input[type="radio"] {
+        accent-color: var(--accent);
+        height: 30px;
+        width: 30px;
+      }
+      input[type="number"],
+      select {
+        font-size: 1rem;
+        min-height: 38px;
+        min-width: 96px;
+        padding: 6px;
+      }
       pre {
-        background: #f4f4f4;
-        border: 1px solid #ddd;
+        background: #fff;
+        border: 1px solid var(--line);
         overflow: auto;
-        padding: 14px;
+        padding: 12px;
         white-space: pre-wrap;
       }
-      .hint {
-        color: #555;
-        line-height: 1.4;
+      [hidden] {
+        display: none !important;
       }
     </style>
   </head>
   <body>
-    <h1>Camper module BLE test</h1>
+    <h1>Camper module</h1>
     <p class="hint">
-      Open this page in Bluefy, put the controller into setup mode, then tap the
-      button and select Camper module.
+      Put the controller into setup mode, open this page in Bluefy, then connect
+      over BLE.
     </p>
-    <button onclick="connectBle()">Connect BLE</button>
-    <h3>Status</h3>
+
+    <button id="connectButton" onclick="connectBle()">Connect BLE</button>
+    <button id="refreshButton" onclick="refreshConfiguration()" disabled>Refresh</button>
     <pre id="status">Not connected</pre>
-    <h3>Configuration JSON</h3>
-    <pre id="configuration"></pre>
+
+    <section id="app" hidden>
+      <div class="card">
+        <h2>Sensors</h2>
+        <div class="row">
+          <label for="FLOWMETER">Flow meter</label>
+          <input type="checkbox" id="FLOWMETER" />
+          <select id="FLOWMETERPin">
+            <option value="2">GPIO2</option>
+            <option value="4">GPIO4</option>
+            <option value="12">GPIO12</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="Environment">Environment</label>
+          <input type="checkbox" id="Environment" onchange="changeEnvironment(this)" />
+        </div>
+        <div class="row">
+          <label for="SHT2X">SHT2X</label>
+          <input type="radio" name="EnvironmentSensor" id="SHT2X" />
+        </div>
+        <div class="row">
+          <label for="BME280">BME280</label>
+          <input type="radio" name="EnvironmentSensor" id="BME280" />
+        </div>
+        <button onclick="saveSensors()">Save sensors</button>
+      </div>
+
+      <div class="card">
+        <h2>Water pump</h2>
+        <div class="row">
+          <label>Status</label>
+          <strong id="pumpStatus">-</strong>
+        </div>
+        <div class="row">
+          <label for="invertPWSignal">Invert signal</label>
+          <input type="checkbox" id="invertPWSignal" />
+        </div>
+        <div class="row" id="autoStopRow">
+          <label for="autoStopSeconds">Auto-stop seconds</label>
+          <input type="number" min="1" step="1" id="autoStopSeconds" />
+        </div>
+        <div class="row" id="noFlowStopRow">
+          <label for="noFlowStopSeconds">No-flow stop seconds</label>
+          <input type="number" min="1" step="1" id="noFlowStopSeconds" />
+        </div>
+        <p class="muted" id="pumpHint"></p>
+        <button onclick="savePump()">Save pump</button>
+        <button onclick="sendCommandAndRefresh({ command: 'startPump' })">Start pump</button>
+        <button onclick="sendCommandAndRefresh({ command: 'stopPump' })">Stop pump</button>
+      </div>
+
+      <div class="card">
+        <h2>Exit setup</h2>
+        <p class="muted">
+          Stops setup mode and returns the controller to normal low-power operation.
+        </p>
+        <button onclick="exitSetup()">Exit setup</button>
+      </div>
+
+      <details>
+        <summary>Raw configuration</summary>
+        <pre id="configuration"></pre>
+      </details>
+    </section>
 
     <script>
       const serviceUuid = "abd39c82-951e-4acb-944d-ba04db3e1e03";
       const configurationUuid = "abd39c82-951e-4acb-944d-ba04db3e1e05";
+      const commandUuid = "abd39c82-951e-4acb-944d-ba04db3e1e06";
+      const statusUuid = "abd39c82-951e-4acb-944d-ba04db3e1e07";
+
+      let bleDevice = null;
+      let configurationCharacteristic = null;
+      let commandCharacteristic = null;
+      let statusCharacteristic = null;
+      let currentConfiguration = null;
 
       function writeStatus(message) {
         document.getElementById("status").textContent = message;
@@ -55,6 +190,10 @@
 
       function decodeValue(value) {
         return new TextDecoder("utf-8").decode(value);
+      }
+
+      function encodeValue(value) {
+        return new TextEncoder().encode(value);
       }
 
       async function connectBle() {
@@ -65,32 +204,125 @@
           }
 
           writeStatus("Requesting BLE device ...");
-          const device = await navigator.bluetooth.requestDevice({
+          bleDevice = await navigator.bluetooth.requestDevice({
             filters: [{ services: [serviceUuid] }],
             optionalServices: [serviceUuid],
           });
 
-          writeStatus(`Connecting to ${device.name || "BLE device"} ...`);
-          const server = await device.gatt.connect();
+          writeStatus(`Connecting to ${bleDevice.name || "BLE device"} ...`);
+          const server = await bleDevice.gatt.connect();
           const service = await server.getPrimaryService(serviceUuid);
-          const configurationCharacteristic =
-            await service.getCharacteristic(configurationUuid);
+          configurationCharacteristic = await service.getCharacteristic(configurationUuid);
+          commandCharacteristic = await service.getCharacteristic(commandUuid);
+          statusCharacteristic = await service.getCharacteristic(statusUuid);
 
-          writeStatus("Reading configuration ...");
-          const value = await configurationCharacteristic.readValue();
-          const text = decodeValue(value);
-
-          try {
-            document.getElementById("configuration").textContent =
-              JSON.stringify(JSON.parse(text), null, 2);
-          } catch (_error) {
-            document.getElementById("configuration").textContent = text;
-          }
-
-          writeStatus("Connected and configuration read.");
+          document.getElementById("connectButton").disabled = true;
+          document.getElementById("refreshButton").disabled = false;
+          document.getElementById("app").hidden = false;
+          await refreshConfiguration();
         } catch (error) {
           writeStatus(error && error.message ? error.message : String(error));
         }
+      }
+
+      async function refreshConfiguration() {
+        await sendCommand({ command: "configuration" }, false);
+        await readConfiguration();
+      }
+
+      async function readConfiguration() {
+        const value = await configurationCharacteristic.readValue();
+        const text = decodeValue(value);
+        document.getElementById("configuration").textContent = text;
+        currentConfiguration = JSON.parse(text);
+        applyConfiguration(currentConfiguration);
+        writeStatus("Connected and configuration loaded.");
+      }
+
+      async function sendCommand(command, refreshAfter = true) {
+        const payload = JSON.stringify(command);
+        writeStatus(`Sending ${command.command} ...`);
+        await commandCharacteristic.writeValue(encodeValue(payload));
+        await wait(350);
+        try {
+          const statusValue = await statusCharacteristic.readValue();
+          writeStatus(decodeValue(statusValue));
+        } catch (_error) {
+          writeStatus(`${command.command} sent.`);
+        }
+        if (refreshAfter) {
+          await readConfiguration();
+        }
+      }
+
+      async function sendCommandAndRefresh(command) {
+        await sendCommand(command, true);
+      }
+
+      function applyConfiguration(config) {
+        document.querySelector("h1").textContent = config.deviceName || "Camper module";
+        document.getElementById("FLOWMETER").checked = config.FLOWMETER === true;
+        document.getElementById("FLOWMETERPin").value = String(config.FLOWMETERPin || 2);
+        document.getElementById("SHT2X").checked = config.SHT2X === true;
+        document.getElementById("BME280").checked = config.BME280 === true;
+        document.getElementById("Environment").checked = config.SHT2X === true || config.BME280 === true;
+        setEnvironmentEnabled(document.getElementById("Environment").checked);
+
+        const pump = config.pump || {};
+        const usesFlowMeter = pump.usesFlowMeter === true || config.FLOWMETER === true;
+        document.getElementById("pumpStatus").textContent = pump.state || "-";
+        document.getElementById("invertPWSignal").checked = pump.invert === true;
+        document.getElementById("autoStopSeconds").value = pump.autoStopSeconds || 60;
+        document.getElementById("noFlowStopSeconds").value = pump.noFlowStopSeconds || 3;
+        document.getElementById("autoStopRow").hidden = usesFlowMeter;
+        document.getElementById("noFlowStopRow").hidden = !usesFlowMeter;
+        document.getElementById("pumpHint").textContent = usesFlowMeter
+          ? "Flow meter is active. The pump stops after the no-flow delay."
+          : "Flow meter is off. The pump stops after the auto-stop timer.";
+      }
+
+      function changeEnvironment(checkbox) {
+        setEnvironmentEnabled(checkbox.checked);
+        if (checkbox.checked && !document.getElementById("SHT2X").checked && !document.getElementById("BME280").checked) {
+          document.getElementById("BME280").checked = true;
+        }
+      }
+
+      function setEnvironmentEnabled(enabled) {
+        document.getElementById("SHT2X").disabled = !enabled;
+        document.getElementById("BME280").disabled = !enabled;
+        if (!enabled) {
+          document.getElementById("SHT2X").checked = false;
+          document.getElementById("BME280").checked = false;
+        }
+      }
+
+      async function saveSensors() {
+        await sendCommand({
+          command: "updateSensors",
+          FLOWMETER: document.getElementById("FLOWMETER").checked,
+          FLOWMETERPin: Number(document.getElementById("FLOWMETERPin").value),
+          SHT2X: document.getElementById("SHT2X").checked,
+          BME280: document.getElementById("BME280").checked,
+        });
+      }
+
+      async function savePump() {
+        await sendCommand({
+          command: "updateWaterPump",
+          invertPWSignal: document.getElementById("invertPWSignal").checked,
+          autoStopSeconds: Number(document.getElementById("autoStopSeconds").value),
+          noFlowStopSeconds: Number(document.getElementById("noFlowStopSeconds").value),
+        });
+      }
+
+      async function exitSetup() {
+        await sendCommand({ command: "exitSetup" }, false);
+        writeStatus("Exit setup command sent. The controller should restart.");
+      }
+
+      function wait(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
       }
     </script>
   </body>
