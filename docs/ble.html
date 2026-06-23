@@ -2,55 +2,138 @@
 <html>
   <head>
     <title>Camper module BLE</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f4f1eb" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Camper BLE" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Camper module BLE","short_name":"Camper BLE","display":"standalone","background_color":"#f4f1eb","theme_color":"#736b92"}' />
     <style>
       :root {
         --accent: #736b92;
         --accent-dark: #5f587c;
-        --button-off: #e3e3e3;
-        --paper: #f6f5f2;
-        --line: #dedbd2;
-        --ink: #202020;
-        --muted: #666;
+        --bg: #f4f1eb;
+        --card: #fffdf8;
+        --button-off: #e7e3dc;
+        --line: #ddd6ca;
+        --ink: #222;
+        --muted: #6a6259;
+        --ok: #2f6f4e;
+        --warn: #8a5a16;
       }
       * { box-sizing: border-box; }
-      html { font-family: Arial, sans-serif; color: var(--ink); }
-      body { max-width: 680px; margin: 0 auto; padding: 12px 18px 18px; background: #fff; }
-      h1 { font-size: 1.8rem; margin: 0; }
-      h2 { font-size: 1.2rem; margin: 0 0 12px; }
-      .hint, .muted { color: var(--muted); line-height: 1.25; }
-      .top-actions { margin: 10px 0; }
-      .tabs { display: flex; gap: 4px; margin-top: 10px; }
-      .tab-button { flex: 1; margin: 0; padding: 9px 6px; }
-      .tab-button.inactive { background: var(--button-off); color: #333; }
-      .card { background: var(--paper); border: 1px solid var(--line); padding: 16px; }
-      .row { align-items: center; display: flex; gap: 12px; margin: 12px 0; }
-      .row label:first-child { flex: 1; font-size: 1.05rem; }
-      button { background: var(--accent); border: 0; color: #fff; cursor: pointer; font-size: 1rem; margin: 4px 6px 4px 0; padding: 11px 14px; }
+      html { color: var(--ink); font-family: Arial, sans-serif; }
+      body {
+        background: linear-gradient(180deg, #fff 0%, var(--bg) 100%);
+        margin: 0 auto;
+        max-width: 680px;
+        min-height: 100vh;
+        padding: 12px 16px 18px;
+      }
+      header {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+      h1 { font-size: 1.65rem; line-height: 1.05; margin: 0; }
+      h2 { font-size: 1.15rem; margin: 0 0 12px; }
+      .hint { color: var(--muted); font-size: 0.92rem; line-height: 1.25; margin: 6px 0 0; }
+      .top-actions { display: flex; gap: 8px; margin: 12px 0 8px; }
+      .status {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.25;
+        margin: 8px 0 10px;
+        min-height: 34px;
+        padding: 8px 12px;
+      }
+      .status.connected { color: var(--ok); }
+      .status.warning { color: var(--warn); }
+      .tabs {
+        background: #eee9df;
+        border: 1px solid var(--line);
+        display: flex;
+        gap: 4px;
+        margin-top: 10px;
+        padding: 4px;
+      }
+      .tab-button {
+        background: transparent;
+        color: #39342e;
+        flex: 1;
+        margin: 0;
+        padding: 10px 6px;
+      }
+      .tab-button.active {
+        background: var(--accent);
+        color: #fff;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-top: 0;
+        padding: 16px;
+      }
+      .row { align-items: center; display: flex; gap: 12px; margin: 13px 0; }
+      .row label:first-child { flex: 1; font-size: 1.02rem; }
+      .actions { margin-top: 16px; }
+      button {
+        background: var(--accent);
+        border: 0;
+        color: #fff;
+        cursor: pointer;
+        font-size: 1rem;
+        margin: 0;
+        padding: 11px 14px;
+      }
+      button.secondary { background: var(--button-off); color: #312d28; }
+      button.danger { background: #8b5049; }
       button:disabled { background: #d8d8d8; color: #555; }
       button:active { background: var(--accent-dark); transform: scale(0.98); }
-      input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); height: 30px; width: 30px; }
-      input[type="number"], select { font-size: 1rem; min-height: 38px; min-width: 96px; padding: 6px; }
-      pre { background: #fff; border: 1px solid var(--line); font-size: 0.82rem; margin: 8px 0; overflow: auto; padding: 8px; white-space: pre-wrap; }
+      input[type="checkbox"], input[type="radio"] {
+        accent-color: var(--accent);
+        height: 30px;
+        width: 30px;
+      }
+      input[type="number"], select {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        font-size: 1rem;
+        min-height: 38px;
+        min-width: 96px;
+        padding: 6px 10px;
+      }
+      .muted { color: var(--muted); font-size: 0.95rem; line-height: 1.3; }
+      .button-row { display: flex; flex-wrap: wrap; gap: 8px; }
       [hidden] { display: none !important; }
     </style>
   </head>
   <body>
-    <h1>Camper module</h1>
-    <p class="hint" id="introHint">Open in Bluefy while the controller is in setup mode.</p>
+    <header>
+      <div>
+        <h1>Camper module</h1>
+        <p class="hint" id="introHint">Open in Bluefy while the controller is in setup mode.</p>
+      </div>
+    </header>
 
     <div class="top-actions">
       <button id="connectButton" onclick="connectBle()">Connect BLE</button>
-      <button id="refreshButton" onclick="refreshConfiguration()" disabled>Refresh</button>
+      <button id="refreshButton" class="secondary" onclick="refreshConfiguration()" disabled>Refresh</button>
     </div>
-    <pre id="status">Not connected</pre>
+    <div id="status" class="status">Not connected</div>
 
     <section id="app" hidden>
-      <div class="tabs">
-        <button id="sensorsTabButton" class="tab-button" onclick="showTab('sensorsTab')">Sensors</button>
-        <button id="pumpTabButton" class="tab-button inactive" onclick="showTab('pumpTab')">Water pump</button>
-        <button id="exitTabButton" class="tab-button inactive" onclick="showTab('exitTab')">Exit setup</button>
-      </div>
+      <nav class="tabs">
+        <button id="sensorsTabButton" class="tab-button active" onclick="showTab('sensorsTab')">Sensors</button>
+        <button id="pumpTabButton" class="tab-button" onclick="showTab('pumpTab')">Water pump</button>
+        <button id="exitTabButton" class="tab-button" onclick="showTab('exitTab')">Exit</button>
+      </nav>
 
       <div id="sensorsTab" class="card">
         <h2>Sensors</h2>
@@ -75,7 +158,9 @@
           <label for="BME280">BME280</label>
           <input type="radio" name="EnvironmentSensor" id="BME280" />
         </div>
-        <button onclick="saveSensors()">Save sensors</button>
+        <div class="actions">
+          <button onclick="saveSensors()">Save sensors</button>
+        </div>
       </div>
 
       <div id="pumpTab" class="card" hidden>
@@ -94,21 +179,20 @@
           <input type="number" min="1" step="1" id="noFlowStopSeconds" />
         </div>
         <p class="muted" id="pumpHint"></p>
-        <button onclick="savePump()">Save pump</button>
-        <button onclick="sendCommandAndRefresh({ command: 'startPump' })">Start pump</button>
-        <button onclick="sendCommandAndRefresh({ command: 'stopPump' })">Stop pump</button>
+        <div class="actions button-row">
+          <button onclick="savePump()">Save pump</button>
+          <button class="secondary" onclick="sendCommandAndRefresh({ command: 'startPump' })">Start</button>
+          <button class="secondary" onclick="sendCommandAndRefresh({ command: 'stopPump' })">Stop</button>
+        </div>
       </div>
 
       <div id="exitTab" class="card" hidden>
         <h2>Exit setup</h2>
         <p class="muted">Stops setup mode and returns the controller to normal low-power operation.</p>
-        <button onclick="exitSetup()">Exit setup</button>
+        <div class="actions">
+          <button class="danger" onclick="exitSetup()">Exit setup</button>
+        </div>
       </div>
-
-      <details>
-        <summary>Raw configuration</summary>
-        <pre id="configuration"></pre>
-      </details>
     </section>
 
     <script>
@@ -123,13 +207,17 @@
       let statusCharacteristic = null;
       let currentConfiguration = null;
 
-      function writeStatus(message) { document.getElementById("status").textContent = message; }
+      function writeStatus(message, type = "") {
+        const status = document.getElementById("status");
+        status.textContent = message;
+        status.className = `status ${type}`.trim();
+      }
       function decodeValue(value) { return new TextDecoder("utf-8").decode(value); }
       function encodeValue(value) { return new TextEncoder().encode(value); }
 
       async function connectBle() {
         try {
-          if (!navigator.bluetooth) { writeStatus("Web Bluetooth is not available in this browser."); return; }
+          if (!navigator.bluetooth) { writeStatus("Web Bluetooth is not available in this browser.", "warning"); return; }
           writeStatus("Requesting BLE device ...");
           bleDevice = await navigator.bluetooth.requestDevice({ filters: [{ services: [serviceUuid] }], optionalServices: [serviceUuid] });
           writeStatus(`Connecting to ${bleDevice.name || "BLE device"} ...`);
@@ -143,7 +231,7 @@
           document.getElementById("app").hidden = false;
           showTab("sensorsTab");
           await refreshConfiguration();
-        } catch (error) { writeStatus(error && error.message ? error.message : String(error)); }
+        } catch (error) { writeStatus(error && error.message ? error.message : String(error), "warning"); }
       }
 
       async function refreshConfiguration() {
@@ -154,15 +242,14 @@
       async function readConfiguration() {
         const value = await configurationCharacteristic.readValue();
         const text = decodeValue(value);
-        document.getElementById("configuration").textContent = text;
         try {
           currentConfiguration = JSON.parse(text);
         } catch (error) {
-          writeStatus("Configuration JSON is incomplete. Flash the updated firmware with compact BLE configuration.");
+          writeStatus("Configuration JSON is incomplete. Flash the updated firmware with compact BLE configuration.", "warning");
           return;
         }
         applyConfiguration(currentConfiguration);
-        writeStatus("Connected.");
+        writeStatus("Connected.", "connected");
         document.getElementById("introHint").hidden = true;
       }
 
@@ -172,8 +259,8 @@
         await wait(350);
         try {
           const statusValue = await statusCharacteristic.readValue();
-          writeStatus(decodeValue(statusValue));
-        } catch (_error) { writeStatus(`${command.command} sent.`); }
+          writeStatus(decodeValue(statusValue), "connected");
+        } catch (_error) { writeStatus(`${command.command} sent.`, "connected"); }
         if (refreshAfter) { await readConfiguration(); }
       }
 
@@ -202,8 +289,8 @@
 
       function showTab(tabId) {
         ["sensorsTab", "pumpTab", "exitTab"].forEach((id) => { document.getElementById(id).hidden = id !== tabId; });
-        ["sensorsTabButton", "pumpTabButton", "exitTabButton"].forEach((id) => { document.getElementById(id).classList.add("inactive"); });
-        document.getElementById(`${tabId}Button`).classList.remove("inactive");
+        ["sensorsTabButton", "pumpTabButton", "exitTabButton"].forEach((id) => { document.getElementById(id).classList.remove("active"); });
+        document.getElementById(`${tabId}Button`).classList.add("active");
       }
 
       function changeEnvironment(checkbox) {
@@ -240,7 +327,7 @@
 
       async function exitSetup() {
         await sendCommand({ command: "exitSetup" }, false);
-        writeStatus("Exit setup command sent. The controller should restart.");
+        writeStatus("Exit setup command sent. The controller should restart.", "connected");
       }
 
       function wait(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
