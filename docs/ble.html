@@ -138,13 +138,18 @@
       <div id="sensorsTab" class="card">
         <h2>Sensors</h2>
         <div class="row">
+          <label>Last temperature</label>
+          <strong id="lastTemperature">-</strong>
+        </div>
+        <div class="row">
+          <label>Last humidity</label>
+          <strong id="lastHumidity">-</strong>
+        </div>
+        <p class="muted" id="lastEnvironmentStatus"></p>
+        <div class="row">
           <label for="FLOWMETER">Flow meter</label>
           <input type="checkbox" id="FLOWMETER" />
-          <select id="FLOWMETERPin">
-            <option value="2">GPIO2</option>
-            <option value="4">GPIO4</option>
-            <option value="12">GPIO12</option>
-          </select>
+          <select id="FLOWMETERPin"></select>
         </div>
         <div class="row">
           <label for="Environment">Environment</label>
@@ -269,11 +274,21 @@
       function applyConfiguration(config) {
         document.querySelector("h1").textContent = config.deviceName || "Camper module";
         document.getElementById("FLOWMETER").checked = config.FLOWMETER === true;
-        document.getElementById("FLOWMETERPin").value = String(config.FLOWMETERPin || 2);
+        setFlowMeterPinOptions(config.flowMeterPins || [2, 4, 12], config.FLOWMETERPin || 2);
         document.getElementById("SHT2X").checked = config.SHT2X === true;
         document.getElementById("BME280").checked = config.BME280 === true;
         document.getElementById("Environment").checked = config.SHT2X === true || config.BME280 === true;
         setEnvironmentEnabled(document.getElementById("Environment").checked);
+        const last = config.last || {};
+        if (last.environmentOk === true) {
+          document.getElementById("lastTemperature").textContent = `${Number(last.temperature).toFixed(1)} C`;
+          document.getElementById("lastHumidity").textContent = `${Number(last.humidity).toFixed(1)} %`;
+          document.getElementById("lastEnvironmentStatus").textContent = "Last environment reading saved.";
+        } else {
+          document.getElementById("lastTemperature").textContent = "-";
+          document.getElementById("lastHumidity").textContent = "-";
+          document.getElementById("lastEnvironmentStatus").textContent = last.environmentError || "No environment reading saved yet.";
+        }
         const pump = config.pump || {};
         const usesFlowMeter = pump.usesFlowMeter === true || config.FLOWMETER === true;
         document.getElementById("pumpStatus").textContent = pump.state || "-";
@@ -285,6 +300,18 @@
         document.getElementById("pumpHint").textContent = usesFlowMeter
           ? "Flow meter is active. The pump stops after the no-flow delay."
           : "Flow meter is off. The pump stops after the auto-stop timer.";
+      }
+
+      function setFlowMeterPinOptions(pins, selectedPin) {
+        const select = document.getElementById("FLOWMETERPin");
+        select.innerHTML = "";
+        pins.forEach((pin) => {
+          const option = document.createElement("option");
+          option.value = String(pin);
+          option.text = `GPIO${pin}`;
+          select.appendChild(option);
+        });
+        select.value = String(selectedPin);
       }
 
       function showTab(tabId) {
