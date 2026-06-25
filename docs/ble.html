@@ -281,14 +281,30 @@
       async function sendCommandAndRefresh(command) { await sendCommand(command, true); }
 
       function applyConfiguration(config) {
-        document.querySelector("h1").textContent = config.deviceName || "Camper module";
-        document.getElementById("FLOWMETER").checked = config.FLOWMETER === true;
-        setFlowMeterPinOptions(config.flowMeterPins || [2, 4, 12], config.FLOWMETERPin || 2);
-        document.getElementById("SHT2X").checked = config.SHT2X === true;
-        document.getElementById("BME280").checked = config.BME280 === true;
-        document.getElementById("Environment").checked = config.SHT2X === true || config.BME280 === true;
+        const flowMeter = config.fm === true || config.FLOWMETER === true;
+        const flowMeterPin = config.fmp || config.FLOWMETERPin || 2;
+        const flowMeterPins = config.fp || config.flowMeterPins || [2, 4, 12];
+        const sht2x = config.sht === true || config.SHT2X === true;
+        const bme280 = config.bme === true || config.BME280 === true;
+        document.querySelector("h1").textContent = config.n || config.deviceName || "Camper module";
+        document.getElementById("FLOWMETER").checked = flowMeter;
+        setFlowMeterPinOptions(flowMeterPins, flowMeterPin);
+        document.getElementById("SHT2X").checked = sht2x;
+        document.getElementById("BME280").checked = bme280;
+        document.getElementById("Environment").checked = sht2x || bme280;
         setEnvironmentEnabled(document.getElementById("Environment").checked);
-        const last = config.last || {};
+        const rawLast = config.l || config.last || {};
+        const last = {
+          environmentOk: rawLast.ok === true || rawLast.environmentOk === true,
+          temperature: rawLast.t ?? rawLast.temperature,
+          humidity: rawLast.h ?? rawLast.humidity,
+          environmentError: rawLast.e || rawLast.environmentError,
+          temperatureStatsOk: rawLast.ts === true || rawLast.temperatureStatsOk === true,
+          temperatureMin24h: rawLast.mn ?? rawLast.temperatureMin24h,
+          temperatureMax24h: rawLast.mx ?? rawLast.temperatureMax24h,
+          temperatureMinAgeMinutes: rawLast.mna ?? rawLast.temperatureMinAgeMinutes,
+          temperatureMaxAgeMinutes: rawLast.mxa ?? rawLast.temperatureMaxAgeMinutes,
+        };
         if (last.environmentOk === true) {
           document.getElementById("lastTemperature").textContent = `${Number(last.temperature).toFixed(1)} C`;
           document.getElementById("lastHumidity").textContent = `${Number(last.humidity).toFixed(1)} %`;
@@ -307,8 +323,15 @@
           document.getElementById("temperatureMax24h").textContent = "-";
           document.getElementById("temperatureStatsStatus").textContent = "No 24h temperature stats yet.";
         }
-        const pump = config.pump || {};
-        const usesFlowMeter = pump.usesFlowMeter === true || config.FLOWMETER === true;
+        const rawPump = config.p || config.pump || {};
+        const pump = {
+          state: rawPump.st || rawPump.state,
+          invert: rawPump.inv === true || rawPump.invert === true,
+          autoStopSeconds: rawPump.as || rawPump.autoStopSeconds,
+          noFlowStopSeconds: rawPump.nfs || rawPump.noFlowStopSeconds,
+          usesFlowMeter: rawPump.uf === true || rawPump.usesFlowMeter === true,
+        };
+        const usesFlowMeter = pump.usesFlowMeter === true || flowMeter;
         document.getElementById("pumpStatus").textContent = pump.state || "-";
         document.getElementById("invertPWSignal").checked = pump.invert === true;
         document.getElementById("autoStopSeconds").value = pump.autoStopSeconds || 60;
