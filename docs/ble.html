@@ -147,6 +147,15 @@
         </div>
         <p class="muted" id="lastEnvironmentStatus"></p>
         <div class="row">
+          <label>Min 24h</label>
+          <strong id="temperatureMin24h">-</strong>
+        </div>
+        <div class="row">
+          <label>Max 24h</label>
+          <strong id="temperatureMax24h">-</strong>
+        </div>
+        <p class="muted" id="temperatureStatsStatus"></p>
+        <div class="row">
           <label for="FLOWMETER">Flow meter</label>
           <input type="checkbox" id="FLOWMETER" />
           <select id="FLOWMETERPin"></select>
@@ -289,6 +298,15 @@
           document.getElementById("lastHumidity").textContent = "-";
           document.getElementById("lastEnvironmentStatus").textContent = last.environmentError || "No environment reading saved yet.";
         }
+        if (last.temperatureStatsOk === true) {
+          document.getElementById("temperatureMin24h").textContent = `${Number(last.temperatureMin24h).toFixed(1)} C`;
+          document.getElementById("temperatureMax24h").textContent = `${Number(last.temperatureMax24h).toFixed(1)} C`;
+          document.getElementById("temperatureStatsStatus").textContent = `Min ${formatAge(last.temperatureMinAgeMinutes)}, max ${formatAge(last.temperatureMaxAgeMinutes)}.`;
+        } else {
+          document.getElementById("temperatureMin24h").textContent = "-";
+          document.getElementById("temperatureMax24h").textContent = "-";
+          document.getElementById("temperatureStatsStatus").textContent = "No 24h temperature stats yet.";
+        }
         const pump = config.pump || {};
         const usesFlowMeter = pump.usesFlowMeter === true || config.FLOWMETER === true;
         document.getElementById("pumpStatus").textContent = pump.state || "-";
@@ -300,6 +318,15 @@
         document.getElementById("pumpHint").textContent = usesFlowMeter
           ? "Flow meter is active. The pump stops after the no-flow delay."
           : "Flow meter is off. The pump stops after the auto-stop timer.";
+      }
+
+      function formatAge(minutes) {
+        const value = Number(minutes || 0);
+        if (value < 1) return "just now";
+        if (value < 60) return `${value} min ago`;
+        const hours = Math.floor(value / 60);
+        const mins = value % 60;
+        return mins > 0 ? `${hours} h ${mins} min ago` : `${hours} h ago`;
       }
 
       function setFlowMeterPinOptions(pins, selectedPin) {
